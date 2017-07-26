@@ -1,0 +1,200 @@
+---
+title: "A rising tide lifts all podcasts"
+author: Alex Albright
+date: 7-26-17
+output: html_notebook
+---
+#Motivation
+
+Lucy McGowan looked into the growth of 'Drunk' Podcasts in her recent [blog post.](http://livefreeordichotomize.com/2017/02/09/the-prevalence-of-drunk-podcasts/) She found a huge growth in that "genre" (if you will). Moreover, she expresses that:
+
+> While it is certainly true that the number of podcasts in general has absolutely increased over this time period, I would be surprised if the increase is as dramatic as the increase in the number of “drunk” podcasts.
+
+I was skeptical about this claim and wanted to look into trends in other general categories. Also, I wanted an excuse to use emojis in plots. :) 
+
+#Code time!
+Load libraries:
+```{r, message=FALSE, warning=FALSE}
+library(dplyr);library(ggplot2);library(ggrepel); library(extrafont); library(ggthemes);library(reshape);library(grid);
+library(scales);library(RColorBrewer);library(gridExtra); library(emoGG)
+```
+Define my plot theme (for graphics that will come later) as usual:
+```{r}
+#Define theme for my visuals
+my_theme <- function() {
+
+  # Define colors for the chart
+  palette <- brewer.pal("Greys", n=9)
+  color.background = palette[2]
+  color.grid.major = palette[4]
+  color.panel = palette[3]
+  color.axis.text = palette[9]
+  color.axis.title = palette[9]
+  color.title = palette[9]
+
+  # Create basic construction of chart
+  theme_bw(base_size=9, base_family="Palatino") + 
+
+  # Set the entire chart region to a light gray color
+  theme(panel.background=element_rect(fill=color.panel, color=color.background)) +
+  theme(plot.background=element_rect(fill=color.background, color=color.background)) +
+  theme(panel.border=element_rect(color=color.background)) +
+
+  # Format grid
+  theme(panel.grid.major=element_line(color=color.grid.major,size=.25)) +
+  theme(panel.grid.minor=element_blank()) +
+  theme(axis.ticks=element_blank()) +
+
+  # Format legend
+  theme(legend.position="right") +
+  theme(legend.background = element_rect(fill=color.background)) +
+  theme(legend.text = element_text(size=7,color=color.axis.title)) + 
+  theme(legend.title = element_text(size=0,face="bold", color=color.axis.title)) + 
+  
+  #Format facet labels
+  theme(strip.text.x = element_text(size = 8, face="bold"))+
+
+  # Format title and axes labels these and tick marks
+  theme(plot.title=element_text(color=color.title, size=18, face="bold")) +
+  theme(axis.text.x=element_text(size=6,color=color.axis.text)) +
+  theme(axis.text.y=element_text(size=6,color=color.axis.text)) +
+  theme(axis.title.x=element_text(size=0,color=color.axis.title, vjust=-1, face="bold")) +
+  theme(axis.title.y=element_text(size=0,color=color.axis.title, vjust=1.8, face="bold")) +
+
+  #Format title and facet_wrap title
+  theme(strip.text = element_text(size=8), plot.title = element_text(size = 10, face = "bold", colour = "black", vjust = 1, hjust=0.5))+
+    
+  # Plot margins
+  theme(plot.margin = unit(c(.2, .2, .2, .2), "cm"))
+}
+```
+
+Many of the next chunks are directly adapted straight from Lucy's shared code--thanks Lucy! I search for different terms and finesse my plots differently but Lucy should be given credit for the base code.
+
+For plots, I scrolled through emojis and procured their unicode codes [here](https://apps.timwhitlock.info/emoji/tables/unicode). I could have also used `emoji_search` in the `emoGG` package if I knew the names of the emojis I wanted. 
+
+### 'Comedy' Podcasts
+Pull data:
+```{r}
+req <- httr::GET(url = "https://itunes.apple.com/search",
+          query = list(
+            term = "comedy",
+            media = "podcast",
+            limit = 200
+          ))
+
+itunes <- jsonlite::fromJSON(httr::content(req))$results
+```
+Plot:
+```{r, fig.height=3, fig.width=3, message=FALSE, warning=FALSE}
+comedy<-itunes %>%
+  mutate(date = as.Date(releaseDate),monyear = zoo::as.yearmon(date)) %>%
+  group_by(monyear) %>%
+  summarise(n = n()) %>%
+  mutate(date = zoo::as.Date(monyear)) %>%
+  ggplot(aes(x = date,y=n)) +
+    scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
+    scale_y_continuous(limits=c(0, 150), breaks=seq(0,150,25))+
+    emoGG::geom_emoji(emoji="1f602") + 
+    labs(title="'Comedy' podcast releases") +
+    my_theme()
+```
+### 'Politics' Podcasts
+Pull data:
+```{r}
+req <- httr::GET(url = "https://itunes.apple.com/search",
+          query = list(
+            term = "politics",
+            media = "podcast",
+            limit = 200
+          ))
+
+itunes <- jsonlite::fromJSON(httr::content(req))$results
+```
+Plot:
+```{r, fig.height=3, fig.width=3, message=FALSE, warning=FALSE}
+politics<-itunes %>%
+  mutate(date = as.Date(releaseDate),monyear = zoo::as.yearmon(date)) %>%
+  group_by(monyear) %>%
+  summarise(n = n()) %>%
+  mutate(date = zoo::as.Date(monyear)) %>%
+  ggplot(aes(x = date,y=n)) +
+    scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
+    scale_y_continuous(limits=c(0, 150), breaks=seq(0,150,25))+
+    emoGG::geom_emoji(emoji="270a") + 
+    labs( title="'Politics' podcast releases") +
+    my_theme()
+```
+
+### 'Sports' Podcasts
+Pull data:
+```{r}
+req <- httr::GET(url = "https://itunes.apple.com/search",
+          query = list(
+            term = "sports",
+            media = "podcast",
+            limit = 200
+          ))
+
+itunes <- jsonlite::fromJSON(httr::content(req))$results
+```
+Plot:
+```{r, fig.height=3, fig.width=3, message=FALSE, warning=FALSE}
+sports<-itunes %>%
+  mutate(date = as.Date(releaseDate),monyear = zoo::as.yearmon(date)) %>%
+  group_by(monyear) %>%
+  summarise(n = n()) %>%
+  mutate(date = zoo::as.Date(monyear)) %>%
+  ggplot(aes(x = date,y=n)) +
+    scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
+    emoGG::geom_emoji(emoji="26bd") + 
+    scale_y_continuous(limits=c(0, 150), breaks=seq(0,150,25))+
+    labs(title="'Sports' podcast releases") +
+    my_theme()
+```
+
+### 'Science' Podcasts
+Pull data:
+```{r}
+req <- httr::GET(url = "https://itunes.apple.com/search",
+          query = list(
+            term = "science",
+            media = "podcast",
+            limit = 200
+          ))
+
+itunes <- jsonlite::fromJSON(httr::content(req))$results
+```
+Plot:
+```{r, fig.height=3, fig.width=3, message=FALSE, warning=FALSE}
+science<-itunes %>%
+  mutate(date = as.Date(releaseDate),monyear = zoo::as.yearmon(date)) %>%
+  group_by(monyear) %>%
+  summarise(n = n()) %>%
+  mutate(date = zoo::as.Date(monyear)) %>%
+  ggplot(aes(x = date,y=n)) +
+    scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
+    scale_y_continuous(limits=c(0, 150), breaks=seq(0,150,25))+
+    emoGG::geom_emoji(emoji="1f52c") + 
+    labs(title="'Science' podcast releases") +
+    my_theme()
+```
+
+# The final product!
+**Now, I can combine all four plots into one aggregated piece of evidence that, wow, yeah, lots of podcasts have seen dramatic increases in 2017!**
+
+```{r, fig.height=3, fig.width=3, message=FALSE, warning=FALSE}
+grid.arrange(comedy, sports, politics, science, ncol=2, nrow=2, top=textGrob("A rising tide lifts all podcasts", gp=gpar(fontsize=20, fontfamily="Palatino")), bottom=textGrob("Alex Albright | thelittledataset.com", hjust=-.45, gp=gpar(fontsize=10, font=3, fontfamily="Palatino")))
+```
+Yay for `geom_emoji` in the `emoGG` package! 
+Does anyone know how to alter the skin tone for the "fist" emoji? While I know the emoji itself [supports skin tone modifiers](https://emojipedia.org/raised-fist-type-4/), I could not figure out how to incorporate modifiers in the context of `geom_emoji`.
+
+Now, let's save this as a pdf.
+```{r, message=FALSE, warning=FALSE}
+#save to pdf
+pdf("pods.pdf", width = 7, height = 7) # Open a new pdf file
+grid.arrange(comedy, sports, politics, science, ncol=2, nrow=2, top=textGrob("A rising tide lifts all podcasts", gp=gpar(fontsize=20, fontfamily="Palatino")), bottom=textGrob("Alex Albright | thelittledataset.com", hjust=-.45, gp=gpar(fontsize=10, font=3, fontfamily="Palatino"))) # Write the grid.arrange to a pdf file
+dev.off()
+```
+
+# [The end!](https://i.redd.it/2302x89w2e8y.jpg)
